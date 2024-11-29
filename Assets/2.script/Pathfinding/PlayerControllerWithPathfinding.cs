@@ -2,89 +2,115 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A* ê²½ë¡œì°¾ê¸°ë¥¼ ì´ìš©í•œ í”Œë ˆì´ì–´ ìºë¦­í„° ì»¨íŠ¸ë¡¤ëŸ¬
+/// ë§ˆìš°ìŠ¤ í´ë¦­ìœ¼ë¡œ ì´ë™í•˜ë©° ì¥ì• ë¬¼ì„ í”¼í•˜ê³  ë³´ì„ì„ ìˆ˜ì§‘í•˜ëŠ” ê¸°ëŠ¥ êµ¬í˜„
+/// </summary>
 public class PlayerControllerWithPathfinding : MonoBehaviour
 {
-    public float moveSpeed = 5f; // ÇÃ·¹ÀÌ¾î ÀÌµ¿ ¼Óµµ
-    public Transform target;    // ¸ñÇ¥ ÁöÁ¡ Transform
-    public LayerMask obstacleLayer; // Àå¾Ö¹° LayerMask
-    public Animator animator;   // ¾Ö´Ï¸ŞÀÌÅÍ ÄÄÆ÷³ÍÆ®
+    // ì¸ìŠ¤í™í„°ì—ì„œ ì„¤ì • ê°€ëŠ¥í•œ public ë³€ìˆ˜ë“¤
+    public float moveSpeed = 5f;         // í”Œë ˆì´ì–´ì˜ ì´ë™ ì†ë„
+    public Transform target;             // ëª©í‘œ ì§€ì ì˜ Transform
+    public LayerMask obstacleLayer;      // ì¥ì• ë¬¼ ê°ì§€ë¥¼ ìœ„í•œ ë ˆì´ì–´ ë§ˆìŠ¤í¬
+    public Animator animator;            // ìºë¦­í„° ì• ë‹ˆë©”ì´ì…˜ ì œì–´ìš© ì»´í¬ë„ŒíŠ¸
 
-    private Pathfinding pathfinding;
-    private List<Vector2Int> path = new List<Vector2Int>();
-    private Vector2Int currentGridPos;
+    // ê²½ë¡œì°¾ê¸° ê´€ë ¨ private ë³€ìˆ˜ë“¤
+    private Pathfinding pathfinding;     // A* ê²½ë¡œì°¾ê¸° ì•Œê³ ë¦¬ì¦˜ ì»´í¬ë„ŒíŠ¸
+    private List<Vector2Int> path;       // í˜„ì¬ ì´ë™ ê²½ë¡œë¥¼ ì €ì¥í•˜ëŠ” ë¦¬ìŠ¤íŠ¸
+    private Vector2Int currentGridPos;   // í˜„ì¬ ê·¸ë¦¬ë“œ ìƒì˜ ìœ„ì¹˜
 
-    // ÃÊ±â À§Ä¡ ÀúÀå º¯¼ö
-    private Vector3 initialPosition;
+    private Vector3 initialPosition;      // ì‹œì‘ ìœ„ì¹˜ ì €ì¥ (ë¶€í™œ ì§€ì )
+    private bool isMoving = false;       // í˜„ì¬ ì´ë™ ì¤‘ì¸ì§€ ë‚˜íƒ€ë‚´ëŠ” í”Œë˜ê·¸
+    private int gemCount = 0;            // ìˆ˜ì§‘í•œ ë³´ì„ì˜ ê°œìˆ˜
 
-    // ÀÌµ¿ Áß ¿©ºÎ¸¦ È®ÀÎÇÏ´Â ÇÃ·¡±×
-    private bool isMoving = false;
-
-    // Àë Ä«¿îÆ® º¯¼ö
-    private int gemCount = 0;
-
+    /// <summary>
+    /// ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™” ë° ì‹œì‘ ìœ„ì¹˜ ì„¤ì •
+    /// </summary>
     void Start()
     {
-        pathfinding = GetComponent<Pathfinding>(); // Pathfinding ½ºÅ©¸³Æ® ÂüÁ¶
-        currentGridPos = Vector2Int.FloorToInt(transform.position); // ½ÃÀÛ À§Ä¡
-
-        // ÃÊ±â À§Ä¡ ÀúÀå
+        // í•„ìš”í•œ ì»´í¬ë„ŒíŠ¸ ì°¸ì¡° ê°€ì ¸ì˜¤ê¸°
+        pathfinding = GetComponent<Pathfinding>();
+        
+        // í˜„ì¬ ìœ„ì¹˜ë¥¼ ê·¸ë¦¬ë“œ ì¢Œí‘œë¡œ ë³€í™˜í•˜ì—¬ ì €ì¥
+        currentGridPos = Vector2Int.FloorToInt(transform.position);
+        
+        // ì´ˆê¸° ìœ„ì¹˜ ì €ì¥ (ë¶€í™œ ì§€ì ìœ¼ë¡œ ì‚¬ìš©)
         initialPosition = transform.position;
     }
 
+    /// <summary>
+    /// ë§¤ í”„ë ˆì„ ë§ˆìš°ìŠ¤ ì…ë ¥ì„ ì²˜ë¦¬í•˜ê³  ì´ë™ ê²½ë¡œ ê³„ì‚°
+    /// </summary>
     void Update()
     {
-        // ÀÌµ¿ ÁßÀÏ °æ¿ì Å¬¸¯À» ¹«½Ã
+        // ì´ë™ ì¤‘ì¼ ê²½ìš° ì¶”ê°€ ì…ë ¥ì„ ë¬´ì‹œ
         if (isMoving)
             return;
 
-        // ¸¶¿ì½º Å¬¸¯À¸·Î ¸ñÇ¥ ¼³Á¤
+        // ë§ˆìš°ìŠ¤ ì™¼ìª½ ë²„íŠ¼ í´ë¦­ ê°ì§€
         if (Input.GetMouseButtonDown(0))
         {
+            // ë§ˆìš°ìŠ¤ í´ë¦­ ìœ„ì¹˜ë¥¼ ì›”ë“œ ì¢Œí‘œë¡œ ë³€í™˜
             Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2Int goalGridPos = Vector2Int.FloorToInt(mousePosition);
 
-            // Àå¾Ö¹° °ËÃâ ¹× °æ·Î Ã£±â
+            // ì¥ì• ë¬¼ì„ ê°ì§€í•˜ê³  ê²½ë¡œ ê³„ì‚°
             HashSet<Vector2Int> obstacles = GetObstacles();
             path = pathfinding.FindPath(currentGridPos, goalGridPos, obstacles);
 
-            if (path.Count > 0) // À¯È¿ÇÑ °æ·Î°¡ ÀÖÀ» °æ¿ì¸¸ ÀÌµ¿ ½ÃÀÛ
+            // ìœ íš¨í•œ ê²½ë¡œê°€ ìˆì„ ê²½ìš°ì—ë§Œ ì´ë™ ì‹œì‘
+            if (path.Count > 0)
             {
                 StartCoroutine(FollowPath());
             }
         }
     }
 
+    /// <summary>
+    /// ê³„ì‚°ëœ ê²½ë¡œë¥¼ ë”°ë¼ ìºë¦­í„°ë¥¼ ì´ë™ì‹œí‚¤ëŠ” ì½”ë£¨í‹´
+    /// </summary>
     IEnumerator FollowPath()
     {
-        isMoving = true; // ÀÌµ¿ ½ÃÀÛ
+        isMoving = true;     // ì´ë™ ì‹œì‘ ìƒíƒœë¡œ ì„¤ì •
 
+        // ê²½ë¡œì˜ ê° ì§€ì ì„ ìˆœíšŒí•˜ë©° ì´ë™
         foreach (var position in path)
         {
+            // í˜„ì¬ ëª©í‘œ ì§€ì ê³¼ ì´ë™ ë°©í–¥ ê³„ì‚°
             Vector3 targetPos = new Vector3(position.x, position.y, 0);
-            Vector2 direction = (targetPos - transform.position).normalized; // ÀÌµ¿ ¹æÇâ °è»ê
+            Vector2 direction = (targetPos - transform.position).normalized;
 
+            // ëª©í‘œ ì§€ì ì— ë„ë‹¬í•  ë•Œê¹Œì§€ ì´ë™
             while ((targetPos - transform.position).sqrMagnitude > 0.01f)
             {
-                transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
+                // ë¶€ë“œëŸ¬ìš´ ì´ë™ ì²˜ë¦¬
+                transform.position = Vector3.MoveTowards(
+                    transform.position, 
+                    targetPos, 
+                    moveSpeed * Time.deltaTime
+                );
 
-                // ¾Ö´Ï¸ŞÀÌ¼Ç ¹æÇâ ¾÷µ¥ÀÌÆ®
+                // í˜„ì¬ ì´ë™ ë°©í–¥ì— ë§ëŠ” ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
                 UpdateAnimationDirection(direction);
 
                 yield return null;
             }
 
-            currentGridPos = position; // ÇöÀç À§Ä¡ ¾÷µ¥ÀÌÆ®
+            // í˜„ì¬ ê·¸ë¦¬ë“œ ìœ„ì¹˜ ì—…ë°ì´íŠ¸
+            currentGridPos = position;
         }
 
-        // Á¤Áö »óÅÂ ¾Ö´Ï¸ŞÀÌ¼Ç Ã³¸®
+        // ì´ë™ ì™„ë£Œ í›„ ì •ì§€ ìƒíƒœ ì• ë‹ˆë©”ì´ì…˜ìœ¼ë¡œ ì „í™˜
         UpdateAnimationDirection(Vector2.zero);
-
-        isMoving = false; // ÀÌµ¿ Á¾·á
+        isMoving = false;    // ì´ë™ ì¢…ë£Œ ìƒíƒœë¡œ ì„¤ì •
     }
 
+    /// <summary>
+    /// ì´ë™ ë°©í–¥ì— ë”°ë¼ ì ì ˆí•œ ì• ë‹ˆë©”ì´ì…˜ì„ ì¬ìƒí•˜ê³  ìŠ¤í”„ë¼ì´íŠ¸ ë°©í–¥ ì¡°ì •
+    /// </summary>
+    /// <param name="direction">ì´ë™ ë°©í–¥ ë²¡í„°</param>
     void UpdateAnimationDirection(Vector2 direction)
     {
-        // ÀÌµ¿ ¹æÇâ¿¡ µû¶ó ¾Ö´Ï¸ŞÀÌ¼Ç ¼³Á¤
         if (direction == Vector2.up)
         {
             animator.Play("up");
@@ -96,56 +122,78 @@ public class PlayerControllerWithPathfinding : MonoBehaviour
         else if (direction.x > 0)
         {
             animator.Play("walk");
-            GetComponent<SpriteRenderer>().flipX = false; // ¿À¸¥ÂÊ ÀÌµ¿ ½Ã ÇÃ¸³ ºñÈ°¼ºÈ­
+            GetComponent<SpriteRenderer>().flipX = false;  // ì˜¤ë¥¸ìª½ ë°©í–¥
         }
         else if (direction.x < 0)
         {
             animator.Play("walk");
-            GetComponent<SpriteRenderer>().flipX = true; // ¿ŞÂÊ ÀÌµ¿ ½Ã ÇÃ¸³ È°¼ºÈ­
+            GetComponent<SpriteRenderer>().flipX = true;   // ì™¼ìª½ ë°©í–¥
         }
         else
         {
-            animator.Play("idle"); // Á¤Áö »óÅÂ
+            animator.Play("idle");  // ì •ì§€ ìƒíƒœ
         }
     }
 
+    /// <summary>
+    /// ì£¼ë³€ì˜ ì¥ì• ë¬¼ì„ ê°ì§€í•˜ì—¬ ê·¸ë¦¬ë“œ ì¢Œí‘œë¡œ ë³€í™˜
+    /// </summary>
+    /// <returns>ì¥ì• ë¬¼ì˜ ê·¸ë¦¬ë“œ ì¢Œí‘œ ì§‘í•©</returns>
     HashSet<Vector2Int> GetObstacles()
     {
         HashSet<Vector2Int> obstacles = new HashSet<Vector2Int>();
-        Collider2D[] colliders = Physics2D.OverlapBoxAll(transform.position, new Vector2(50, 50), 0, obstacleLayer);
+        
+        // ì£¼ë³€ ì˜ì—­ì˜ ì¥ì• ë¬¼ ì½œë¼ì´ë” ê°ì§€
+        Collider2D[] colliders = Physics2D.OverlapBoxAll(
+            transform.position,
+            new Vector2(50, 50),
+            0,
+            obstacleLayer
+        );
+
+        // ê°ì§€ëœ ê° ì¥ì• ë¬¼ì˜ ìœ„ì¹˜ë¥¼ ê·¸ë¦¬ë“œ ì¢Œí‘œë¡œ ë³€í™˜í•˜ì—¬ ì €ì¥
         foreach (var col in colliders)
         {
             obstacles.Add(Vector2Int.FloorToInt(col.transform.position));
         }
+
         return obstacles;
     }
 
+    /// <summary>
+    /// ë‹¤ë¥¸ ì˜¤ë¸Œì íŠ¸ì™€ì˜ ì¶©ëŒ ì²˜ë¦¬ (ì , ë³´ì„ ë“±)
+    /// </summary>
     void OnTriggerEnter2D(Collider2D collision)
     {
-        // Enemy ÅÂ±×°¡ ºÙÀº ¿ÀºêÁ§Æ®¿Í Ãæµ¹ÇÑ °æ¿ì
+        // ì ê³¼ ì¶©ëŒí•œ ê²½ìš°
         if (collision.CompareTag("Enemy"))
         {
             Debug.Log("Player collided with an enemy! Returning to initial position.");
             ReturnToInitialPosition();
         }
 
-        // Gem ÅÂ±×°¡ ºÙÀº ¿ÀºêÁ§Æ®¿Í Ãæµ¹ÇÑ °æ¿ì
+        // ë³´ì„ê³¼ ì¶©ëŒí•œ ê²½ìš°
         if (collision.CompareTag("Gem"))
         {
-            Destroy(collision.gameObject); // Àë ¿ÀºêÁ§Æ® Á¦°Å
-            gemCount++; // Àë °³¼ö Áõ°¡
+            Destroy(collision.gameObject);  // ë³´ì„ ì˜¤ë¸Œì íŠ¸ ì œê±°
+            gemCount++;                     // ë³´ì„ ì¹´ìš´íŠ¸ ì¦ê°€
         }
     }
 
+    /// <summary>
+    /// í”Œë ˆì´ì–´ë¥¼ ì´ˆê¸° ìœ„ì¹˜ë¡œ ë˜ëŒë¦¬ëŠ” ë©”ì„œë“œ
+    /// </summary>
     void ReturnToInitialPosition()
     {
-        StopAllCoroutines(); // ÇöÀç ÁøÇà ÁßÀÎ ÀÌµ¿ Áß´Ü
-        transform.position = initialPosition; // ÃÊ±â À§Ä¡·Î ÀÌµ¿
-        currentGridPos = Vector2Int.FloorToInt(initialPosition); // ÇöÀç À§Ä¡¸¦ ÃÊ±â À§Ä¡·Î ¾÷µ¥ÀÌÆ®
-        isMoving = false; // ÀÌµ¿ »óÅÂ ÃÊ±âÈ­
+        StopAllCoroutines();                                      // ì§„í–‰ ì¤‘ì¸ ëª¨ë“  ì½”ë£¨í‹´ ì¤‘ì§€
+        transform.position = initialPosition;                      // ìœ„ì¹˜ ì´ˆê¸°í™”
+        currentGridPos = Vector2Int.FloorToInt(initialPosition);  // ê·¸ë¦¬ë“œ ìœ„ì¹˜ ì´ˆê¸°í™”
+        isMoving = false;                                         // ì´ë™ ìƒíƒœ ì´ˆê¸°í™”
     }
 
-    // Àë °³¼ö¸¦ ¹İÈ¯ÇÏ´Â ¸Ş¼­µå
+    /// <summary>
+    /// í˜„ì¬ê¹Œì§€ ìˆ˜ì§‘í•œ ë³´ì„ì˜ ê°œìˆ˜ë¥¼ ë°˜í™˜
+    /// </summary>
     public int GetGemCount()
     {
         return gemCount;
