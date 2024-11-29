@@ -1,15 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+/// A* ì•Œê³ ë¦¬ì¦˜ì„ ì‚¬ìš©í•œ ê²½ë¡œì°¾ê¸° ì‹œìŠ¤í…œ
+
 public class Pathfinding : MonoBehaviour
 {
+    /// <summary>
+    /// ê²½ë¡œì°¾ê¸°ì— ì‚¬ìš©ë˜ëŠ” ê° ê²©ìì ì„ í‘œí˜„í•˜ëŠ” ë…¸ë“œ í´ë˜ìŠ¤
+    /// </summary>
     public class Node
     {
-        public Vector2Int Position;   // ³ëµå À§Ä¡
-        public float G;              // ½ÃÀÛÁ¡¿¡¼­ ÇöÀç ³ëµå±îÁöÀÇ ºñ¿ë
-        public float H;              // ÈŞ¸®½ºÆ½ (¸ñÇ¥±îÁöÀÇ ÃßÁ¤ ºñ¿ë)
-        public float F => G + H;     // ÃÑ ºñ¿ë
-        public Node Parent;          // ÀÌÀü ³ëµå (°æ·Î ÃßÀû¿ë)
+        public Vector2Int Position;   // ë…¸ë“œì˜ ê·¸ë¦¬ë“œ ìƒ ìœ„ì¹˜
+        public float G;              // g(n): ì‹œì‘ì ì—ì„œ í˜„ì¬ ë…¸ë“œê¹Œì§€ì˜ ì‹¤ì œ ì´ë™ ë¹„ìš©
+        public float H;              // h(n): í˜„ì¬ ë…¸ë“œì—ì„œ ëª©í‘œê¹Œì§€ì˜ ì¶”ì • ë¹„ìš© 
+        public float F => G + H;     // f(n): ì´ ì˜ˆìƒ ë¹„ìš© (g(n) + h(n))
+        public Node Parent;          // ê²½ë¡œ ì¬êµ¬ì„±ì„ ìœ„í•œ ì´ì „ ë…¸ë“œ ì°¸ì¡°
 
         public Node(Vector2Int position)
         {
@@ -20,22 +26,25 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
+  
+    /// ì‹œì‘ì ì—ì„œ ëª©í‘œì ê¹Œì§€ì˜ ìµœë‹¨ ê²½ë¡œë¥¼ ì°¾ëŠ” A* ì•Œê³ ë¦¬ì¦˜
+    /// <param name="start">ì‹œì‘ ìœ„ì¹˜</param>
+    /// <param name="goal">ëª©í‘œ ìœ„ì¹˜</param>
+    /// <param name="obstacles">ì¥ì• ë¬¼ì´ ìˆëŠ” ìœ„ì¹˜ë“¤ì˜ ì§‘í•©</param>
+    /// <returns>ì°¾ì€ ê²½ë¡œì˜ ìœ„ì¹˜ ëª©ë¡ (ê²½ë¡œê°€ ì—†ìœ¼ë©´ ë¹ˆ ë¦¬ìŠ¤íŠ¸)</returns>
     public List<Vector2Int> FindPath(Vector2Int start, Vector2Int goal, HashSet<Vector2Int> obstacles)
     {
-        // Open list (Å½»öÇØ¾ß ÇÒ ³ëµå)
-        List<Node> openList = new List<Node>();
-        // Closed list (Å½»ö ¿Ï·áµÈ ³ëµå)
-        HashSet<Vector2Int> closedList = new HashSet<Vector2Int>();
+        List<Node> openList = new List<Node>();        // íƒìƒ‰í•  ë…¸ë“œë“¤ì˜ ëª©ë¡
+        HashSet<Vector2Int> closedList = new HashSet<Vector2Int>();  // ì´ë¯¸ íƒìƒ‰í•œ ë…¸ë“œë“¤ì˜ ì§‘í•©
 
-        // ½ÃÀÛ ³ëµå »ı¼º
+        // ì‹œì‘ ë…¸ë“œ ì´ˆê¸°í™” ë° openListì— ì¶”ê°€
         Node startNode = new Node(start);
         Node goalNode = new Node(goal);
         openList.Add(startNode);
 
-        // A* ¾Ë°í¸®Áò ½ÇÇà
         while (openList.Count > 0)
         {
-            // f(n)ÀÌ °¡Àå ³·Àº ³ëµå¸¦ ¼±ÅÃ
+            // openListì—ì„œ f(n)ì´ ê°€ì¥ ì‘ì€ ë…¸ë“œë¥¼ í˜„ì¬ ë…¸ë“œë¡œ ì„ íƒ
             Node currentNode = openList[0];
             foreach (var node in openList)
             {
@@ -45,30 +54,32 @@ public class Pathfinding : MonoBehaviour
                 }
             }
 
-            // ¸ñÇ¥¿¡ µµ´ŞÇÏ¸é °æ·Î¸¦ ¹İÈ¯
+            // ëª©í‘œì— ë„ë‹¬í–ˆë‹¤ë©´ ê²½ë¡œë¥¼ ì¬êµ¬ì„±í•˜ì—¬ ë°˜í™˜
             if (currentNode.Position == goal)
             {
                 return ReconstructPath(currentNode);
             }
 
-            // Open list¿¡¼­ Á¦°ÅÇÏ°í Closed list¿¡ Ãß°¡
+            // í˜„ì¬ ë…¸ë“œë¥¼ openListì—ì„œ ì œê±°í•˜ê³  closedListì— ì¶”ê°€
             openList.Remove(currentNode);
             closedList.Add(currentNode.Position);
 
-            // ÇöÀç ³ëµåÀÇ ÀÌ¿ô Å½»ö
+            // í˜„ì¬ ë…¸ë“œì˜ ëª¨ë“  ì´ì›ƒ ë…¸ë“œë“¤ì„ ê²€ì‚¬
             foreach (var neighborPos in GetNeighbors(currentNode.Position))
             {
+                // ì´ë¯¸ íƒìƒ‰í–ˆê±°ë‚˜ ì¥ì• ë¬¼ì¸ ìœ„ì¹˜ëŠ” ê±´ë„ˆëœ€
                 if (closedList.Contains(neighborPos) || obstacles.Contains(neighborPos))
                 {
-                    continue; // ÀÌ¹Ì Å½»öÇß°Å³ª Àå¾Ö¹°ÀÎ °æ¿ì ¹«½Ã
+                    continue;
                 }
 
+                // ì´ì›ƒ ë…¸ë“œì˜ ë¹„ìš©ì„ ê³„ì‚°í•˜ê³  openListì— ì¶”ê°€
                 Node neighborNode = new Node(neighborPos);
-                neighborNode.G = currentNode.G + 1; // g(n): ÀÌÀü ³ëµå±îÁöÀÇ ºñ¿ë + ÀÌµ¿ ºñ¿ë
-                neighborNode.H = GetHeuristic(neighborPos, goal); // h(n): ÈŞ¸®½ºÆ½
+                neighborNode.G = currentNode.G + 1;  // ëª¨ë“  ì´ë™ì˜ ë¹„ìš©ì„ 1ë¡œ ê°€ì •
+                neighborNode.H = GetHeuristic(neighborPos, goal);
                 neighborNode.Parent = currentNode;
 
-                // Open list¿¡ ¾ø´Â °æ¿ì Ãß°¡
+                // ì•„ì§ íƒìƒ‰í•˜ì§€ ì•Šì€ ë…¸ë“œë¼ë©´ openListì— ì¶”ê°€
                 if (!openList.Exists(node => node.Position == neighborPos))
                 {
                     openList.Add(neighborNode);
@@ -76,10 +87,13 @@ public class Pathfinding : MonoBehaviour
             }
         }
 
-        // °æ·Î¸¦ Ã£Áö ¸øÇÑ °æ¿ì ºó ¸®½ºÆ® ¹İÈ¯
+        // ê²½ë¡œë¥¼ ì°¾ì§€ ëª»í•œ ê²½ìš° ë¹ˆ ë¦¬ìŠ¤íŠ¸ ë°˜í™˜
         return new List<Vector2Int>();
     }
 
+    /// <summary>
+    /// ìµœì¢… ë…¸ë“œë¶€í„° ì‹œì‘ ë…¸ë“œê¹Œì§€ ê±°ìŠ¬ëŸ¬ ì˜¬ë¼ê°€ë©° ê²½ë¡œë¥¼ ì¬êµ¬ì„±
+    /// </summary>
     private List<Vector2Int> ReconstructPath(Node node)
     {
         List<Vector2Int> path = new List<Vector2Int>();
@@ -88,25 +102,29 @@ public class Pathfinding : MonoBehaviour
             path.Add(node.Position);
             node = node.Parent;
         }
-        path.Reverse();
+        path.Reverse();  // ì‹œì‘ì ë¶€í„° ëª©í‘œì  ìˆœì„œë¡œ ê²½ë¡œ ì¬ì •ë ¬
         return path;
     }
 
+    /// <summary>
+    /// ì£¼ì–´ì§„ ìœ„ì¹˜ì—ì„œ ì´ë™ ê°€ëŠ¥í•œ ìƒí•˜ì¢Œìš° ë„¤ ë°©í–¥ì˜ ìœ„ì¹˜ë¥¼ ë°˜í™˜
+    /// </summary>
     private List<Vector2Int> GetNeighbors(Vector2Int position)
     {
-        // 4¹æÇâ ÀÌµ¿
         return new List<Vector2Int>
         {
-            position + Vector2Int.up,
-            position + Vector2Int.down,
-            position + Vector2Int.left,
-            position + Vector2Int.right
+            position + Vector2Int.up,    // ìœ„
+            position + Vector2Int.down,  // ì•„ë˜
+            position + Vector2Int.left,  // ì™¼ìª½
+            position + Vector2Int.right  // ì˜¤ë¥¸ìª½
         };
     }
 
+    /// <summary>
+    /// ë‘ ìœ„ì¹˜ ì‚¬ì´ì˜ ë§¨í•´íŠ¼ ê±°ë¦¬ë¥¼ ê³„ì‚° (íœ´ë¦¬ìŠ¤í‹± í•¨ìˆ˜)
+    /// </summary>
     private float GetHeuristic(Vector2Int a, Vector2Int b)
     {
-        // ¸ÇÇØÆ° °Å¸® °è»ê
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
     }
 }
