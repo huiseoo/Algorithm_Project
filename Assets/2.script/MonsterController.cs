@@ -4,36 +4,36 @@ using UnityEngine;
 
 public class MonsterController : MonoBehaviour
 {
-    // ¸ó½ºÅÍÀÇ ÀÌµ¿ ¼Óµµ
+    // ëª¬ìŠ¤í„°ì˜ ì´ë™ ì†ë„
     public float moveSpeed;
 
-    // ¸ó½ºÅÍÀÇ ÀÌµ¿ ¹æÇâ (1: À§·Î, -1: ¾Æ·¡·Î)
+    // ëª¬ìŠ¤í„°ì˜ ì´ë™ ë°©í–¥ (1: ìœ„ë¡œ, -1: ì•„ë˜ë¡œ)
     public int moveDirection = 1;
 
-    // ¸®½ºÆù ´ë±â ½Ã°£ (ÃÊ ´ÜÀ§)
+    // ë¦¬ìŠ¤í° ëŒ€ê¸° ì‹œê°„ (ì´ˆ ë‹¨ìœ„)
     public float respawnTime;
 
-    // ¾Ö´Ï¸ŞÀÌÅÍ ÄÄÆ÷³ÍÆ®
+    // ì• ë‹ˆë©”ì´í„° ì»´í¬ë„ŒíŠ¸
     public Animator animator;
 
-    // ÃÊ±â À§Ä¡¸¦ ÀúÀå
+    // ì´ˆê¸° ìœ„ì¹˜ë¥¼ ì €ì¥
     private Vector2 initialPosition;
 
-    // Rigidbody2D ÄÄÆ÷³ÍÆ®
+    // Rigidbody2D ì»´í¬ë„ŒíŠ¸
     private Rigidbody2D rb;
 
     void Start()
     {
-        // Rigidbody2D ÄÄÆ÷³ÍÆ® °¡Á®¿À±â
+        // Rigidbody2D ì»´í¬ë„ŒíŠ¸ ê°€ì ¸ì˜¤ê¸°
         rb = GetComponent<Rigidbody2D>();
 
-        // ÃÊ±â À§Ä¡ ÀúÀå
+        // ì´ˆê¸° ìœ„ì¹˜ ì €ì¥
         initialPosition = transform.position;
 
-        // ¸ó½ºÅÍ ÀÌµ¿ ½ÃÀÛ
+        // ëª¬ìŠ¤í„° ì´ë™ ì‹œì‘
         StartCoroutine(Move());
 
-        // ÀÏÁ¤ ½Ã°£¸¶´Ù ¸ó½ºÅÍ¸¦ ¸®½ºÆù
+        // ì¼ì • ì‹œê°„ë§ˆë‹¤ ëª¬ìŠ¤í„°ë¥¼ ë¦¬ìŠ¤í°
         //StartCoroutine(RespawnTimer());
     }
 
@@ -41,36 +41,36 @@ public class MonsterController : MonoBehaviour
     {
         while (true)
         {
-            // ÀÌµ¿ ¹æÇâ¿¡ µû¶ó ¼Óµµ¸¦ ¼³Á¤
+            // ì´ë™ ë°©í–¥ì— ë”°ë¼ ì†ë„ë¥¼ ì„¤ì •
             rb.velocity = new Vector2(0, moveDirection * moveSpeed);
 
-            // ÀÌµ¿ ¹æÇâ¿¡ µû¸¥ ¾Ö´Ï¸ŞÀÌ¼Ç ¾÷µ¥ÀÌÆ®
+            // ì´ë™ ë°©í–¥ì— ë”°ë¥¸ ì• ë‹ˆë©”ì´ì…˜ ì—…ë°ì´íŠ¸
             UpdateAnimationDirection();
 
-            yield return null; // ¸Å ÇÁ·¹ÀÓ¸¶´Ù ½ÇÇà
+            yield return null; // ë§¤ í”„ë ˆì„ë§ˆë‹¤ ì‹¤í–‰
         }
     }
 
     void UpdateAnimationDirection()
     {
-        // ÀÌµ¿ ¹æÇâ¿¡ µû¶ó ¾Ö´Ï¸ŞÀÌ¼Ç Àç»ı
+        // ì´ë™ ë°©í–¥ì— ë”°ë¼ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
         if (moveDirection == 1)
         {
-            animator.Play("up"); // À§·Î ÀÌµ¿ ½Ã 'up' ¾Ö´Ï¸ŞÀÌ¼Ç
+            animator.Play("up"); // ìœ„ë¡œ ì´ë™ ì‹œ 'up' ì• ë‹ˆë©”ì´ì…˜
         }
         else if (moveDirection == -1)
         {
-            animator.Play("down"); // ¾Æ·¡·Î ÀÌµ¿ ½Ã 'down' ¾Ö´Ï¸ŞÀÌ¼Ç
+            animator.Play("down"); // ì•„ë˜ë¡œ ì´ë™ ì‹œ 'down' ì• ë‹ˆë©”ì´ì…˜
         }
     }
 
     void OnTriggerEnter2D(Collider2D collision)
     {
-        // ¸ó½ºÅÍ°¡ Wall ÅÂ±×¿¡ ºÎµúÈ÷¸é ºñÈ°¼ºÈ­
+        // ëª¬ìŠ¤í„°ê°€ Wall íƒœê·¸ì— ë¶€ë”ªíˆë©´ ë¹„í™œì„±í™”, enemy íƒœ
         if (collision.CompareTag("Enemy"))
         {
-            Debug.Log("Monster hit the wall and will disappear.");
-            gameObject.SetActive(false); // ¸ó½ºÅÍ ºñÈ°¼ºÈ­
+            Debug.Log("Monster hit the wall and will disappear."); //ë””ë²„ê·¸ ë¡œê·¸ ì¶œ
+            gameObject.SetActive(false); // ëª¬ìŠ¤í„° ë¹„í™œì„±í™”
         }
     }
 
@@ -78,17 +78,17 @@ public class MonsterController : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(respawnTime); // ¸®½ºÆù ´ë±â ½Ã°£
-            Respawn(); // ¸®½ºÆù Ã³¸®
+            yield return new WaitForSeconds(respawnTime); // ë¦¬ìŠ¤í° ëŒ€ê¸° ì‹œê°„
+            Respawn(); // ë¦¬ìŠ¤í° ì²˜ë¦¬
         }
     }
 
     void Respawn()
     {
-        // ÃÊ±â À§Ä¡·Î ¸®½ºÆù
+        // ì´ˆê¸° ìœ„ì¹˜ë¡œ ë¦¬ìŠ¤í°
         Debug.Log("Monster respawned.");
-        transform.position = initialPosition; // ÃÊ±â À§Ä¡·Î ÀÌµ¿
-        gameObject.SetActive(true); // ¸ó½ºÅÍ È°¼ºÈ­
+        transform.position = initialPosition; // ì´ˆê¸° ìœ„ì¹˜ë¡œ ì´ë™
+        gameObject.SetActive(true); // ëª¬ìŠ¤í„° í™œì„±í™”
     }
 }
 
