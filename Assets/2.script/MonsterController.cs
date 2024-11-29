@@ -66,7 +66,7 @@ public class MonsterController : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D collision)
     {
-        // 몬스터가 Wall 태그에 부딪히면 비활성화, enemy 태
+        // 몬스터가 Wall 태그에 부딪히면 비활성화
         if (collision.CompareTag("Enemy"))
         {
             Debug.Log("Monster hit the wall and will disappear."); //디버그 로그 출
