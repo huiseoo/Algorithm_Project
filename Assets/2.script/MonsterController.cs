@@ -19,7 +19,7 @@ public class MonsterController : MonoBehaviour
     // 초기 위치를 저장
     private Vector2 initialPosition;
 
-    // Rigidbody2D 컴포넌트
+    // Rigidbody2D 컴포넌트 - 물리 기반 이동 
     private Rigidbody2D rb;
 
     void Start()
